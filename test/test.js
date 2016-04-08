@@ -1,9 +1,31 @@
+// require a persistent database connection as soon as possible!!!!
+require('../db/database');
+var UserAccount = require('../models/UserAccount');
+
 var bcrypt = require('bcrypt'); // BCrypt docs: https://github.com/ncb000gt/node.bcrypt.js
 var control = control || {};    // 'control' data in an experiment
 var db = db || {};              // mock database object
 var chai = require('chai');     // http://chaijs.com/api/bdd/
 var expect = chai.expect;       // http://chaijs.com/guide/styles/#expect
+var should = require('chai').should(); //http://chaijs.com/guide/styles/#should
 var assert = chai.assert;       // http://chaijs.com/guide/styles/#assert
+
+describe('Creating a UserAccount Model', function() {
+  it('can create an Object in a MongoDB Collection', function() {
+    // model.create: 1st argument is the data we wanna save
+    UserAccount.create({
+      name: 'Captain Meowers',
+      email: 'hey@hey.com',
+      passwordHash: 'lol',
+      birthDate: '12/12/12'
+    }, function(error, account) { //returns either an orror or the object created
+      shoud.not.exist(error); // there better not be an error
+      should.exist(account); //we shoudl get back our mongoDB object
+      should.exist(account.passwordHash) // without a password, lol
+      should.exist(account.email) // without a email. lol
+    });
+  });
+});
 
 describe('BCrypt Password Hashing/Comparison', function() {
   // before each test ("it")
@@ -19,18 +41,28 @@ describe('BCrypt Password Hashing/Comparison', function() {
   // after each test ("it")
   afterEach(function() {
     //runs after each test in this block
-    //reset testData
+    //reset control
     testData = {};
   });
 
   // first test: generating a password hash
   it('should generate a hashed password', function() {
+    UserAccount.create({
+      name: 'Captain Meowers',
+      email: 'hey@hey.com',
+      passwordHash: bcrypt.hashSync(control.mockUsersPassword, control.salt),
+      birthDate: '12/12/1122'
+    }, function(error, account) { //returns either an orror or the object created
+      shoud.not.exist(error); // there better not be an error
+      should.exist(account); //we shoudl get back our mongoDB object
+      should.exist(account.passwordHash) // without a password, lol
+      should.exist(account.email) // without a email. lol
+
+      expect(typeof(account.passwordHash)).to.equal('string');
+      expect(account.passwordHash.length).to.equal(60);
+    });
     // how to create a hash
     // hashSync(passwordString, saltNumber)
-    var attempSuccessfulHash = bcrypt.hashSync(control.mockUsersPassword, control.salt);
-    expect(typeof(attempSuccessfulHash)).to.equal('string');
-    expect(attempSuccessfulHash.length).to.equal(60);
-    db.usersPwdHash = attempSuccessfulHash;
   }); // end it
 
   // second test: comparing our valid password
